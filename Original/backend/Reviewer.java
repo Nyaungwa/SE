@@ -1,29 +1,17 @@
-package baseline;
+
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
- * [DIAGRAM] Reviewer lifeline.
- *
- * Participates in the following interactions:
- *   1. ReviewerManager -> Reviewer: filterConflicts(reviewerList)   [DESIGN FLAW -- see below]
- *   2. ReviewerManager -> Reviewer: checkWorkload(reviewerList)     [DESIGN FLAW -- see below]
- *   3. SubmissionController -> Reviewer: assignReview()             (loop: assign reviewers)
- *   4. Reviewer -> EvaluationManager: submitScore(score)            (loop: each reviewer)
- *
- * ------------------------------------------------------------------
- * BASELINE DESIGN FLAW (intentionally preserved from diagram):
- * filterConflicts() and checkWorkload() are called ON a Reviewer
- * object by ReviewerManager. These are management/filtering concerns
- * that belong in ReviewerManager itself (violation of the Expert
- * principle in GRASP). This flaw is preserved verbatim for Task 1.
- * ------------------------------------------------------------------
+ * Reviewer domain object. Also carries filterConflicts() and checkWorkload() methods
+ * that ReviewerManager calls on a delegate instance — wrong class, wrong responsibility.
+ * Expert pattern violation preserved from the baseline diagram.
  */
 public class Reviewer {
 
-    private static final int WORKLOAD_THRESHOLD = 6; // max active assignments
+    private static final int WORKLOAD_THRESHOLD = 6;
 
     private final String  id;
     private final String  name;
@@ -39,21 +27,7 @@ public class Reviewer {
         this.hasConflict     = hasConflict;
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 1 -- filterConflicts
-    // [DIAGRAM] ReviewerManager -> Reviewer: filterConflicts(reviewerList)
-    // [FLAW]    This logic belongs in ReviewerManager, not Reviewer
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] ReviewerManager -> Reviewer: filterConflicts(reviewerList)
-     *
-     * Removes any reviewer from the list who has a conflict of interest
-     * with the current submission.
-     *
-     * @param reviewerList the full candidate list from the database
-     * @return list with conflicted reviewers removed
-     */
+    // Called by ReviewerManager on a delegate — filtering logic that belongs in ReviewerManager.
     public List<Reviewer> filterConflicts(List<Reviewer> reviewerList) {
         List<Reviewer> noConflicts = new ArrayList<>();
         for (Reviewer r : reviewerList) {
@@ -68,21 +42,7 @@ public class Reviewer {
         return noConflicts;
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 2 -- checkWorkload
-    // [DIAGRAM] ReviewerManager -> Reviewer: checkWorkload(reviewerList)
-    // [FLAW]    This logic belongs in ReviewerManager, not Reviewer
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] ReviewerManager -> Reviewer: checkWorkload(reviewerList)
-     *
-     * Removes any reviewer whose current assignment load exceeds the
-     * defined threshold.
-     *
-     * @param reviewerList list already filtered for conflicts
-     * @return list with overloaded reviewers removed
-     */
+    // Called by ReviewerManager on a delegate — filtering logic that belongs in ReviewerManager.
     public List<Reviewer> checkWorkload(List<Reviewer> reviewerList) {
         List<Reviewer> available = new ArrayList<>();
         for (Reviewer r : reviewerList) {
@@ -98,61 +58,23 @@ public class Reviewer {
         return available;
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 3 -- assignReview
-    // [DIAGRAM] loop [assign reviewers]: SubmissionController -> Reviewer: assignReview()
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] loop [assign reviewers] -- SubmissionController -> Reviewer: assignReview()
-     *
-     * Assigns this reviewer to the given submission.
-     *
-     * @param submission the submission to be reviewed
-     */
     public void assignReview(Submission submission) {
         this.assignedSubmission = submission;
         TraceLogger.info("Reviewer:" + id, "assigned to " + submission.getId());
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 4 -- submitScore
-    // [DIAGRAM] loop [each reviewer]: Reviewer -> EvaluationManager: submitScore(score)
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] loop [each reviewer] -- Reviewer -> EvaluationManager: submitScore(score)
-     *
-     * Generates an evaluation score for the assigned submission and
-     * pushes it directly to the EvaluationManager.
-     *
-     * NOTE: The Reviewer holds a direct reference to EvaluationManager
-     * here so it can call submitScore() on it -- tight coupling preserved
-     * exactly as depicted by the arrow in the sequence diagram.
-     *
-     * @param evaluationManager the manager to receive the score
-     */
     public void submitScoreTo(EvaluationManager evaluationManager) {
         double score = generateScore();
-        // [DIAGRAM] Reviewer -> EvaluationManager: submitScore(score)
         TraceLogger.call("Reviewer:" + id, "EvaluationManager",
                          "submitScore(score=" + TraceLogger.fmt(score) + ")");
         evaluationManager.submitScore(id, score);
     }
 
-    // ------------------------------------------------------------------
-    // Private helpers
-    // ------------------------------------------------------------------
-
-    /** Simulates the reviewer producing an evaluation score (50-100). */
+    // Score is seeded from the reviewer id so runs are deterministic.
     private double generateScore() {
         Random rng = new Random(id.hashCode());
         return Math.round((50 + rng.nextDouble() * 50) * 10.0) / 10.0;
     }
-
-    // ------------------------------------------------------------------
-    // Accessors
-    // ------------------------------------------------------------------
 
     public String  getId()              { return id; }
     public String  getName()            { return name; }

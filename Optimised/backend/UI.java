@@ -1,9 +1,4 @@
-/**
- * [DIAGRAM] UI — entry point between Researcher actor and SubmissionController.
- *
- * Receives: Researcher -> UI: submitResearchOutput(data)
- * Sends:    UI -> SubmissionController: submit(data)
- */
+/** Thin passthrough between Researcher and SubmissionController. */
 public class UI {
 
     private final SubmissionController submissionController;

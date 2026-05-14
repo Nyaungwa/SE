@@ -1,27 +1,11 @@
-package baseline;
+
 
 /**
- * [DIAGRAM] Validator lifeline.
- *
- * Receives: validateFormat(data) from SubmissionController
- * Returns:  valid / invalid signal back to SubmissionController
- *
- * NOTE (Baseline): Format validation is a separate round-trip between
- * SubmissionController and Validator, increasing interaction count.
- * This is intentionally preserved as specified in the diagram.
+ * Validates submission format. A separate round-trip per submission — interaction overhead
+ * that the optimised design keeps but routes through a dedicated service.
  */
 public class Validator {
 
-    /**
-     * [DIAGRAM] SubmissionController -> Validator: validateFormat(data)
-     *           Validator           -> SubmissionController: valid/invalid
-     *
-     * Checks that the submission data is non-null, non-empty, and
-     * meets minimum length requirements.
-     *
-     * @param data the raw submission string
-     * @return true if valid, false if invalid
-     */
     public boolean validateFormat(String data) {
 
         if (data == null || data.trim().isEmpty()) {

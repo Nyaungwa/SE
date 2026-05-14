@@ -1,12 +1,6 @@
-package baseline;
 
-/**
- * Data object representing a research submission artefact.
- * Passed between components throughout the submission workflow.
- *
- * [DIAGRAM] The "data" payload carried by submitResearchOutput(data),
- * submit(data), and saveSubmission(data) interactions.
- */
+
+/** Submission data object. Passed between components throughout the workflow. */
 public class Submission {
 
     private final String id;
@@ -14,8 +8,8 @@ public class Submission {
     private String status;
 
     public Submission(String id, String data) {
-        this.id   = id;
-        this.data = data;
+        this.id     = id;
+        this.data   = data;
         this.status = "PENDING";
     }
 

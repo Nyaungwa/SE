@@ -1,16 +1,8 @@
 import java.util.Random;
 
 /**
- * [DIAGRAM] Reviewer — domain object.
- *
- * Step 13 (loop): Reviewer -> EvaluationService: submitScores(scores)
- *
- * [OPTIMISATION vs Baseline]
- * In the baseline, Reviewer was incorrectly used as a delegate to run
- * filterConflicts() and checkWorkload() on behalf of ReviewerManager.
- * In the optimised design, Reviewer is a pure domain object — it only
- * knows about itself (id, workload, conflict flag) and submits its own score.
- * All filtering is handled internally by ReviewerSelectionService.
+ * Reviewer domain object. Pure data + score submission only — filtering logic has been
+ * moved to ReviewerSelectionService, fixing the Expert pattern violation from the baseline.
  */
 public class Reviewer {
 
@@ -30,13 +22,11 @@ public class Reviewer {
         this.hasConflict     = hasConflict;
     }
 
-    // [DIAGRAM] assign reviewer to submission (called from SubmissionService loop)
     public void assignReview(Submission submission) {
         this.assignedSubmission = submission;
         TraceLogger.info("Reviewer:" + id, "assigned to " + submission.getId());
     }
 
-    // [DIAGRAM] Step 13 loop: Reviewer -> EvaluationService: submitScores(scores)
     public void submitScoreTo(EvaluationService evaluationService) {
         double score = generateScore();
         TraceLogger.call("Reviewer:" + id, "EvaluationService",
@@ -44,14 +34,13 @@ public class Reviewer {
         evaluationService.receiveScore(id, score);
     }
 
-    // ── Eligibility checks (used by ReviewerSelectionService internally) ──
-    public boolean hasConflict()      { return hasConflict; }
-    public boolean isOverloaded()     { return currentWorkload >= WORKLOAD_THRESHOLD; }
+    public boolean hasConflict()       { return hasConflict; }
+    public boolean isOverloaded()      { return currentWorkload >= WORKLOAD_THRESHOLD; }
     public int     getCurrentWorkload(){ return currentWorkload; }
+    public String  getId()             { return id; }
+    public String  getName()           { return name; }
 
-    public String getId()   { return id; }
-    public String getName() { return name; }
-
+    // Score seeded from reviewer id so benchmark runs are deterministic.
     private double generateScore() {
         Random rng = new Random(id.hashCode());
         return Math.round((50 + rng.nextDouble() * 50) * 10.0) / 10.0;

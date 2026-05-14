@@ -1,9 +1,6 @@
 import java.util.UUID;
 
-/**
- * [DIAGRAM] Data object representing a research submission artefact.
- * Passed between SubmissionService, ReviewerSelectionService, and EvaluationService.
- */
+/** Submission data object. ID is generated on construction. */
 public class Submission {
 
     private final String id;

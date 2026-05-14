@@ -1,39 +1,15 @@
-package baseline;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * [DIAGRAM] EvaluationManager lifeline.
- *
- * Participates in the following interactions:
- *   1. SubmissionController  -> EvaluationManager: startEvaluation()
- *   2. Reviewer              -> EvaluationManager: submitScore(score)      [loop: each reviewer]
- *   3. EvaluationManager     -> Database:          saveScore(score)
- *   4. EvaluationManager self-call:                calculateAverage()     [self-call]
- *   5. EvaluationManager self-call:                checkConsensus()       [self-call]
- *   6. EvaluationManager self-call:                applyRules()           [self-call]
- *   7. alt [accepted]  -> NotificationService:      notifyAcceptance()
- *      alt [rejected]  -> NotificationService:      notifyRejection()
- *      alt [revision]  -> NotificationService:      notifyRevision()
- *
- * ------------------------------------------------------------------
- * BASELINE DESIGN FLAWS (intentionally preserved from diagram):
- *
- * A) Three exposed self-calls (calculateAverage, checkConsensus,
- *    applyRules) should be encapsulated as internal implementation
- *    details of a single evaluate() method.
- *
- * B) The alt decision block has three separate branches with three
- *    separate notification calls -- this scattered conditional logic
- *    should be replaced with a decision table.
- *
- * Both flaws are preserved verbatim for Task 1.
- * ------------------------------------------------------------------
+ * Handles score collection, averaging, consensus check, and outcome routing.
+ * Three self-calls (calculateAverage, checkConsensus, applyRules) and a three-branch
+ * alt notification block are intentional baseline flaws preserved from the diagram.
  */
 public class EvaluationManager {
 
-    // Decision thresholds
     private static final double ACCEPTANCE_THRESHOLD  = 75.0;
     private static final double REJECTION_THRESHOLD   = 50.0;
     private static final double CONSENSUS_VARIANCE    = 15.0; // max allowed score spread
@@ -49,39 +25,12 @@ public class EvaluationManager {
         this.notificationService = notificationService;
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 1 -- startEvaluation
-    // [DIAGRAM] SubmissionController -> EvaluationManager: startEvaluation()
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] SubmissionController -> EvaluationManager: startEvaluation()
-     *
-     * Initialises the evaluation session, resetting any prior state.
-     */
     public void startEvaluation() {
         scores.clear();
         reviewerIds.clear();
     }
 
-    // ------------------------------------------------------------------
-    // Interaction 2 + 3 -- submitScore & saveScore
-    // [DIAGRAM] loop [each reviewer]: Reviewer -> EvaluationManager: submitScore(score)
-    //           EvaluationManager -> Database: saveScore(score)
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] Reviewer -> EvaluationManager: submitScore(score)
-     *           EvaluationManager -> Database: saveScore(score)
-     *
-     * Accepts a score from an individual reviewer, persists it to the
-     * database, and records it locally for later aggregation.
-     *
-     * @param reviewerId the reviewer submitting the score
-     * @param score      the numeric evaluation score
-     */
     public void submitScore(String reviewerId, double score) {
-        // [DIAGRAM] EvaluationManager -> Database: saveScore(score)
         TraceLogger.call("EvaluationManager", "Database",
                          "saveScore(score=" + TraceLogger.fmt(score)
                          + ", reviewer=" + reviewerId + ")");
@@ -91,21 +40,7 @@ public class EvaluationManager {
         reviewerIds.add(reviewerId);
     }
 
-    // ------------------------------------------------------------------
-    // Self-call 1 -- calculateAverage
-    // [DIAGRAM] EvaluationManager self-call: calculateAverage()
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] EvaluationManager self-call: calculateAverage()
-     *
-     * Computes the arithmetic mean of all submitted scores.
-     *
-     * NOTE (Baseline flaw): Exposed as a visible interaction in the diagram
-     * rather than being a private implementation detail.
-     *
-     * @return average score
-     */
+    // Exposed as a diagram self-call instead of being a private detail — baseline flaw.
     private double calculateAverage() {
         if (scores.isEmpty()) {
             TraceLogger.info("EvaluationManager", "average = 0.00 (no scores)");
@@ -118,21 +53,7 @@ public class EvaluationManager {
         return avg;
     }
 
-    // ------------------------------------------------------------------
-    // Self-call 2 -- checkConsensus
-    // [DIAGRAM] EvaluationManager self-call: checkConsensus()
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] EvaluationManager self-call: checkConsensus()
-     *
-     * Determines whether reviewers reached consensus by checking that
-     * the spread between the highest and lowest score is within tolerance.
-     *
-     * NOTE (Baseline flaw): Exposed as a visible interaction in the diagram.
-     *
-     * @return true if consensus is reached, false otherwise
-     */
+    // Exposed as a diagram self-call instead of being a private detail — baseline flaw.
     private boolean checkConsensus() {
         if (scores.size() < 2) {
             TraceLogger.info("EvaluationManager", "spread=0.00, consensus=true (single reviewer)");
@@ -146,25 +67,7 @@ public class EvaluationManager {
         return consensus;
     }
 
-    // ------------------------------------------------------------------
-    // Self-call 3 -- applyRules
-    // [DIAGRAM] EvaluationManager self-call: applyRules()
-    // ------------------------------------------------------------------
-
-    /**
-     * [DIAGRAM] EvaluationManager self-call: applyRules()
-     *
-     * Applies the decision rules to determine the final submission outcome.
-     * Returns one of: "accepted", "rejected", or "revision".
-     *
-     * NOTE (Baseline flaw): Exposed as a visible interaction. The decision
-     * logic is also scattered -- it should be replaced with a decision table
-     * (Task 3). Preserved as specified.
-     *
-     * @param average   the calculated average score
-     * @param consensus whether reviewers reached consensus
-     * @return outcome string
-     */
+    // Exposed as a diagram self-call instead of being a private detail — baseline flaw.
     private String applyRules(double average, boolean consensus) {
         String outcome;
 
@@ -180,58 +83,32 @@ public class EvaluationManager {
         return outcome;
     }
 
-    // ------------------------------------------------------------------
-    // Finalise evaluation -- triggers self-calls + alt notification block
-    // Called by SubmissionController after the score loop completes
-    // ------------------------------------------------------------------
-
-    /**
-     * Invoked by SubmissionController after all reviewer scores have been
-     * submitted. Executes the three diagram self-calls in sequence, then
-     * routes to the correct notification branch.
-     *
-     * Sequence:
-     *   calculateAverage()  <- self-call
-     *   checkConsensus()    <- self-call
-     *   applyRules()        <- self-call
-     *   alt block:
-     *     [accepted]  -> notifyAcceptance()
-     *     [rejected]  -> notifyRejection()
-     *     [revision]  -> notifyRevision()
-     */
+    // Called by SubmissionController after the reviewer score loop completes.
     public void finalizeEvaluation() {
 
-        // [DIAGRAM] Self-call: calculateAverage()
         TraceLogger.info("EvaluationManager", "[self-call] calculateAverage()");
         double average = calculateAverage();
 
-        // [DIAGRAM] Self-call: checkConsensus()
         TraceLogger.info("EvaluationManager", "[self-call] checkConsensus()");
         boolean consensus = checkConsensus();
 
-        // [DIAGRAM] Self-call: applyRules()
         TraceLogger.info("EvaluationManager", "[self-call] applyRules()");
         String outcome = applyRules(average, consensus);
 
         System.out.println();
 
-        // ------------------------------------------------------------------
-        // [DIAGRAM] alt block -- scattered conditional notification dispatch
-        // ------------------------------------------------------------------
+        // Three separate branches calling three separate notify methods — DRY violation, baseline flaw.
         if ("accepted".equals(outcome)) {
-            // [DIAGRAM] alt [accepted]: EvaluationManager -> NotificationService: notifyAcceptance()
             TraceLogger.alt("[accepted]");
             TraceLogger.call("EvaluationManager", "NotificationService", "notifyAcceptance()");
             notificationService.notifyAcceptance();
 
         } else if ("rejected".equals(outcome)) {
-            // [DIAGRAM] alt [rejected]: EvaluationManager -> NotificationService: notifyRejection()
             TraceLogger.alt("[rejected]");
             TraceLogger.call("EvaluationManager", "NotificationService", "notifyRejection()");
             notificationService.notifyRejection();
 
         } else {
-            // [DIAGRAM] alt [revision]: EvaluationManager -> NotificationService: notifyRevision()
             TraceLogger.alt("[revision]");
             TraceLogger.call("EvaluationManager", "NotificationService", "notifyRevision()");
             notificationService.notifyRevision();

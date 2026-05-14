@@ -1,9 +1,4 @@
-/**
- * [DIAGRAM] Validator
- *
- * Step 4: SubmissionService -> Validator: validate(data)
- * Step 5: Validator -> SubmissionService: valid / invalid
- */
+/** Validates submission format. Returns a typed ValidationResult with a reason string. */
 public class Validator {
 
     public static final class ValidationResult {
@@ -15,11 +10,10 @@ public class Validator {
             this.reason = reason;
         }
 
-        public static ValidationResult ok()              { return new ValidationResult(true,  "VALID"); }
-        public static ValidationResult fail(String why)  { return new ValidationResult(false, why); }
+        public static ValidationResult ok()             { return new ValidationResult(true,  "VALID"); }
+        public static ValidationResult fail(String why) { return new ValidationResult(false, why); }
     }
 
-    // [DIAGRAM] Step 4-5
     public ValidationResult validate(String data) {
         TraceLogger.call("SubmissionService", "Validator", "validate(data)");
         if (data == null || data.trim().isEmpty()) {

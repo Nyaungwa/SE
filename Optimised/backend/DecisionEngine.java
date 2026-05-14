@@ -1,25 +1,11 @@
 import java.util.Map;
 
 /**
- * [DIAGRAM] DecisionEngine
+ * Pure Fabrication that encapsulates the full evaluation algorithm.
+ * Replaces the three exposed self-calls (calculateAverage, checkConsensus, applyRules)
+ * from the baseline EvaluationManager. Maps to decision table DT2.
  *
- * Step 16: EvaluationService -> DecisionEngine: determineOutcome(scores)
- * Step 17: DecisionEngine -> EvaluationService: outcome
- *
- * [OPTIMISATION vs Baseline]
- * The baseline exposed three self-calls (calculateAverage, checkConsensus, applyRules)
- * and used a three-branch alt block calling notifyAcceptance/notifyRejection/notifyRevision
- * separately. This violated High Cohesion and the Polymorphism GRASP pattern.
- *
- * The DecisionEngine is a Pure Fabrication (GRASP) that:
- *   1. Encapsulates all evaluation algorithm steps internally
- *   2. Returns a single outcome string replacing the three-branch alt block
- *   3. Maps directly to the consolidated DT2 decision table from Task 3
- *
- * Decision thresholds (from DT2):
- *   avg >= 75 AND consensus  -> accepted
- *   avg >= 50 AND consensus  -> revision
- *   otherwise                -> rejected
+ * Thresholds: avg >= 75 AND consensus -> accepted | avg >= 50 AND consensus -> revision | else -> rejected
  */
 public class DecisionEngine {
 
@@ -27,10 +13,8 @@ public class DecisionEngine {
     private static final double REVISION_THRESHOLD   = 50.0;
     private static final double CONSENSUS_SPREAD_MAX = 15.0;
 
-    // [DIAGRAM] Step 16: EvaluationService -> DecisionEngine: determineOutcome(scores)
     public String determineOutcome(Map<String, Double> scores) {
-        TraceLogger.call("EvaluationService", "DecisionEngine",
-                         "determineOutcome(scores)");
+        TraceLogger.call("EvaluationService", "DecisionEngine", "determineOutcome(scores)");
 
         double  average   = calculateAverage(scores);
         boolean consensus = checkConsensus(scores);
@@ -40,8 +24,6 @@ public class DecisionEngine {
                               "outcome = " + outcome.toUpperCase());
         return outcome;
     }
-
-    // ── Internal steps (not exposed as separate diagram interactions) ────────
 
     private double calculateAverage(Map<String, Double> scores) {
         if (scores.isEmpty()) return 0.0;
@@ -58,8 +40,7 @@ public class DecisionEngine {
         double max = scores.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
         boolean consensus = (max - min) <= CONSENSUS_SPREAD_MAX;
         TraceLogger.info("DecisionEngine",
-                         "spread=" + TraceLogger.fmt(max - min) +
-                         ", consensus=" + consensus);
+                         "spread=" + TraceLogger.fmt(max - min) + ", consensus=" + consensus);
         return consensus;
     }
 

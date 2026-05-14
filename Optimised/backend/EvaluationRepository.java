@@ -2,24 +2,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * [DIAGRAM] EvaluationRepository
- *
- * Step 15: EvaluationService -> EvaluationRepository: saveAllScores(scores)
- *
- * [OPTIMISATION vs Baseline]
- * The baseline called Database.saveScore() inside the reviewer loop — one database
- * call per reviewer score. The optimised design accumulates all scores in memory
- * and persists them in a single bulk saveAllScores() call after the loop closes.
- * This reduces database interactions from N calls to 1.
+ * Persists reviewer scores. Accepts a single bulk save after all scores are collected,
+ * replacing the per-reviewer saveScore() calls inside the loop from the baseline.
  */
 public class EvaluationRepository {
 
     private final Map<String, Double> scoreStore = new HashMap<>();
 
-    // [DIAGRAM] Step 15 — bulk save after all scores collected
     public void saveAllScores(Map<String, Double> scores) {
-        TraceLogger.call("EvaluationService", "EvaluationRepository",
-                         "saveAllScores(scores)");
+        TraceLogger.call("EvaluationService", "EvaluationRepository", "saveAllScores(scores)");
         scoreStore.putAll(scores);
         TraceLogger.db("saved " + scores.size() + " scores in one batch");
         for (Map.Entry<String, Double> entry : scores.entrySet()) {
