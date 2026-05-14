@@ -2,7 +2,9 @@
 ## From Behavioural Models to Optimised Implementation
 
 > **Intelligent Submission and Review System**
+> 
 > University of Pretoria · Department of Computer Science
+> 
 > Student: Edwin Nyaungwa
 
 ---
@@ -161,7 +163,7 @@ cd Optimised/backend && javac *.java && java Main
 | Classes with 3+ responsibilities | 4 | 0 | -100% |
 | Change impact: new outcome | 3 classes | 1 class | -67% |
 | Change impact: swap database | 3 classes | 1 class | -67% |
-| Avg execution time (1000 runs) | 0.31 ms | 0.31 ms | Equivalent |
+| Avg execution time (1000 runs) | 0.25 ms | 0.22 ms | -12% |
 | Peak execution time | 9.56 ms | 4.44 ms | -54% |
 
 ---
